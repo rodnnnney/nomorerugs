@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from dotenv import load_dotenv
 import os
+import uvicorn
 
 from distribution import get_unique_holders_count, get_token_supply, get_largest_token_accounts
 from mc import calculate_fully_diluted_market_cap
@@ -58,3 +59,7 @@ async def get_token_info(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+if __name__ == "__main__":
+    uvicorn.run('main:app', port=8000, reload=True)
+    
