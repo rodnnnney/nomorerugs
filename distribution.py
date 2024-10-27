@@ -1,84 +1,116 @@
 import requests
 
-# Function to get top 10 holders of a token
-def get_top_holders(token_address, rpc_url="https://api.mainnet-beta.solana.com", top_n=10):
-    headers = {
-        "Content-Type": "application/json"
-    }
-
-    payload_largest_accounts = {
-        "jsonrpc": "2.0",
+def get_token_supply(url, token_mint_address):
+    """Fetches the total supply of a specific token."""
+    payload = {
         "id": 1,
-        "method": "getTokenLargestAccounts",
-        "params": [
-            token_address
-        ]
-    }
-    response_largest_accounts = requests.post(rpc_url, headers=headers, json=payload_largest_accounts).json()
-    
-    if "result" not in response_largest_accounts or "value" not in response_largest_accounts["result"]:
-        raise Exception("Failed to get largest token accounts.")
-    
-    largest_accounts = response_largest_accounts["result"]["value"]
-
-    payload_total_supply = {
         "jsonrpc": "2.0",
-        "id": 1,
         "method": "getTokenSupply",
-        "params": [
-            token_address
-        ]
+        "params": [token_mint_address]
     }
-    response_total_supply = requests.post(rpc_url, headers=headers, json=payload_total_supply).json()
-    
-    if "result" not in response_total_supply or "value" not in response_total_supply["result"]:
-        raise Exception("Failed to get token supply.")
-    
-    total_supply = int(response_total_supply["result"]["value"]["amount"])
-
-    top_holders = []
-    for account_info in largest_accounts[:top_n]:
-        account_address = account_info["address"]
-        balance = int(account_info["amount"])
-        percentage = (balance / total_supply) * 100
-        top_holders.append({
-            "account": account_address,
-            "balance": balance,
-            "percentage": percentage
-        })
-    
-    return top_holders
-
-token_address = "BQYPkPWpYY36eUgt2fbPNrQnvE7Qa5vd5JPjqYvmpump"
-top_holders = get_top_holders(token_address)
-for holder in top_holders:
-    print(f"Account: {holder['account']}, Balance: {holder['balance']}, Percentage: {holder['percentage']:.2f}%")
-
-# Get total token supply
-def get_token_supply(token_address, rpc_url="https://api.mainnet-beta.solana.com"):
     headers = {
-        "Content-Type": "application/json"
+        "accept": "application/json",
+        "content-type": "application/json"
     }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        if data and "result" in data:
+            supply_info = data["result"]["value"]
+            total_supply = int(supply_info["amount"]) / (10 ** supply_info["decimals"])
+            return total_supply
+        else:
+            print("No supply data found for this token address.")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+def get_largest_token_accounts(url, token_mint_address, total_supply):
+    """Fetches the largest token accounts and calculates their holding percentage relative to the total supply."""
+    payload = {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "method": "getTokenLargestAccounts",
+        "params": [token_mint_address]
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json"
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        if data and "result" in data:
+            accounts_info = []
+            accounts = data["result"]["value"]
+            for i, account in enumerate(accounts[:10], start=1):  
+                balance = float(account["uiAmount"])
+                percentage = (balance / total_supply) * 100
+                accounts_info.append({
+                    "account_index": i,
+                    "address": account["address"],
+                    "balance": balance,
+                    "percentage_of_supply": round(percentage, 2)
+                })
+            return accounts_info
+        else:
+            print("No data found for this token address.")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+def get_unique_holders_count(token_mint_address, rpc_url):
+    """Fetches the number of unique token holders."""
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
-        "method": "getTokenSupply",
+        "method": "getProgramAccounts",
         "params": [
-            token_address
+            "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",  # SPL Token program ID
+            {
+                "encoding": "jsonParsed",
+                "filters": [
+                    {"dataSize": 165},  # Standard SPL Token account size
+                    {"memcmp": {"offset": 0, "bytes": token_mint_address}}  # Filter by token mint address
+                ],
+                "commitment": "finalized"  # Ensure data is fully confirmed
+            }
         ]
     }
-    response = requests.post(rpc_url, headers=headers, json=payload).json()
     
-    if "result" not in response or "value" not in response["result"]:
-        raise Exception("Failed to get token supply.")
+    headers = {"Content-Type": "application/json"}
     
-    supply_info = response["result"]["value"]
-    total_supply = int(supply_info["amount"]) / (10 ** supply_info["decimals"])
-    
-    return total_supply
+    try:
+        response = requests.post(rpc_url, json=payload, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        
+        unique_holders = {account["account"]["data"]["parsed"]["info"]["owner"] for account in data["result"]}
+        
+        return len(unique_holders)
+    except requests.RequestException as e:
+        print("Error fetching holder count:", e)
+        return None
 
-token_address = "BQYPkPWpYY36eUgt2fbPNrQnvE7Qa5vd5JPjqYvmpump"
-total_supply = get_token_supply(token_address)
-print(f"Total Supply: {total_supply:,.2f}")
+# Usage example
+url = "https://nd-326-444-187.p2pify.com/9de47db917d4f69168e3fed02217d15b/"
+token_mint_address = "CCwhWaVwJTqrzFahqwsLr9dNKQS1HyBzVWvh3iKcpump"
 
+# Fetch total supply
+total_supply = get_token_supply(url, token_mint_address)
+if total_supply:
+    # Fetch and display the largest accounts
+    largest_accounts = get_largest_token_accounts(url, token_mint_address, total_supply)
+    print("Largest Token Accounts:", largest_accounts)
 
+# Fetch unique holder count
+holder_count = get_unique_holders_count(token_mint_address, url)
+print(f"Number of unique holders: {holder_count}")

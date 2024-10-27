@@ -1,44 +1,60 @@
-import json
-from solscan import get_token_holders, get_token_holders, solscan_api_key, calculate_percentage_ownership, get_token_meta, get_metadata_account
-from mint import check_mint_authority
-from liquidity import is_token_locked
-from solana.rpc.async_api import AsyncClient
+from fastapi import FastAPI, HTTPException, Query
+from dotenv import load_dotenv
+import os
 
+from distribution import get_unique_holders_count, get_token_supply, get_largest_token_accounts
+from mc import calculate_fully_diluted_market_cap
+from mint import get_token_mint_info
+from price import get_token_price_in_usdc
 
-def calculate_distribution(token_address):
+app = FastAPI()
+
+load_dotenv()
+URL = os.getenv("CHAIN_STACK")
+
+@app.get("/token-info")
+async def get_token_info(
+    token_mint_address: str = Query(..., description="The token mint address")
+):
+    try:
+        # Retrieve token price
+        token_price = get_token_price_in_usdc(token_mint_address)
+        if token_price is not None:
+            token_price = f'{token_price:.10f}'  # Format with 10 decimal places
+
+        # Retrieve unique holder count
+        holder_count = get_unique_holders_count(token_mint_address, URL)
+        
+        # Retrieve fully diluted market cap
+        fully_diluted_market_cap = calculate_fully_diluted_market_cap(token_mint_address, URL)
+        
+        # Retrieve token mint information
+        result = get_token_mint_info(URL, token_mint_address)
+
+        # Retrieve total supply
+        total_supply = get_token_supply(URL, token_mint_address)
+
+        # Retrieve largest token accounts
+        largest_accounts = get_largest_token_accounts(URL, token_mint_address, total_supply)
+
+        if result:
+            # Format the total supply with commas
+            formatted_total_supply = f"{total_supply:,}"
+            
+            # Return the results as a JSON response
+            return {
+                "owner" : result.get('owner'),
+                "holder_count": holder_count,
+                "total_supply": formatted_total_supply,
+                "fully_diluted_market_cap": fully_diluted_market_cap,
+                "decimals": result.get("decimals"),
+                "freeze_authority": result.get("freeze_authority"),
+                "mint_authority": result.get("mint_authority"),
+                "token_price": token_price,
+                "largest_accounts": largest_accounts
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Token mint info not found")
     
-    data = json.loads(get_token_meta(token_address))
-
-    token_name = data['data']['name']
-    icon = data['data']['icon']
-    total_supply = int(data["data"]["supply"])
-    
-    #daily_trading_volume = data['data']['volume_24h']
-
-    print(f'{token_name}, {total_supply}, {icon}')
-    return token_name, total_supply, icon
-
-
-print(solscan_api_key)
-# token_name = '6MQ8D4XgoLTPGgkz7sbJdFzA6F6iuepFXE2BtV9npump'
-
-# name, supply, icon = calculate_distribution(token_name)
-
-# for x in calculate_percentage_ownership(token_name, supply):
-#     print(x)
-
-# if is_token_locked(token_name):
-#     print("The liquidity is locked.")
-# else:
-#     print("The liquidity is NOT locked.")
-
-get_metadata_account('BQYPkPWpYY36eUgt2fbPNrQnvE7Qa5vd5JPjqYvmpump')
-
-
-
-
-
-
-
-
-
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
