@@ -1,5 +1,5 @@
 import requests
-from requests.price import get_token_price_in_usdc
+from price import get_token_price_in_usdc
 
 def fetch_max_supply(token_mint_address, rpc_url):
     payload = {

@@ -3,7 +3,10 @@ from dotenv import load_dotenv
 import os
 import uvicorn
 
-from requests import get_unique_holders_count, get_token_supply, get_largest_token_accounts, calculate_fully_diluted_market_cap, get_token_mint_info, get_token_price_in_usdc
+from mc import calculate_fully_diluted_market_cap, fetch_max_supply
+from price import get_token_price_in_usdc 
+from distribution import get_unique_holders_count, get_largest_token_accounts, get_token_supply
+from mint import get_token_mint_info
 
 app = FastAPI()
 

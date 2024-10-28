@@ -100,17 +100,4 @@ def get_unique_holders_count(token_mint_address, rpc_url):
         print("Error fetching holder count:", e)
         return None
 
-# Usage example
-url = "https://nd-326-444-187.p2pify.com/9de47db917d4f69168e3fed02217d15b/"
-token_mint_address = "CCwhWaVwJTqrzFahqwsLr9dNKQS1HyBzVWvh3iKcpump"
-
-# Fetch total supply
-total_supply = get_token_supply(url, token_mint_address)
-if total_supply:
-    # Fetch and display the largest accounts
-    largest_accounts = get_largest_token_accounts(url, token_mint_address, total_supply)
-    print("Largest Token Accounts:", largest_accounts)
-
-# Fetch unique holder count
-holder_count = get_unique_holders_count(token_mint_address, url)
-print(f"Number of unique holders: {holder_count}")
+# 
