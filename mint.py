@@ -109,24 +109,23 @@ def get_token_mint_info(url: str, token_mint_address: str) -> dict:
         return None
 
 
-url = "https://nd-326-444-187.p2pify.com/9de47db917d4f69168e3fed02217d15b/"
-token_mint_address = "62GzFSrcha2QupnSM7BiEwPz4VM1fEFki2Ah7k6bpump"
+# token_mint_address = "62GzFSrcha2QupnSM7BiEwPz4VM1fEFki2Ah7k6bpump"
 
 
-    # Get token name
-name = get_token_name(token_mint_address, url)
+#     # Get token name
+# name = get_token_name(token_mint_address, url)
 
 
-#print(f"Token Name/Symbol: {name}")
+# #print(f"Token Name/Symbol: {name}")
     
-#     # Get detailed mint info
-result = get_token_mint_info(url, token_mint_address)
-if result:
-    print(f"Decimals: {result['decimals']}")
-    print(f"Freeze Authority: {result['freeze_authority']}")
-    print(f"Mint Authority: {result['mint_authority']}")
-    print(f"Total Supply: {result['total_supply']}")
-    print(f"Owner: {result['owner']}")
+# #     # Get detailed mint info
+# result = get_token_mint_info(url, token_mint_address)
+# if result:
+#     print(f"Decimals: {result['decimals']}")
+#     print(f"Freeze Authority: {result['freeze_authority']}")
+#     print(f"Mint Authority: {result['mint_authority']}")
+#     print(f"Total Supply: {result['total_supply']}")
+#     print(f"Owner: {result['owner']}")
 
 # except Exception as e:
 #     print(f"Error: {e}")

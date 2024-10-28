@@ -12,8 +12,8 @@ def get_token_price_in_usdc(token_mint):
         print("Token not supported or price not available.")
         return None
 
-token_mint = "62GzFSrcha2QupnSM7BiEwPz4VM1fEFki2Ah7k6bpump"  
-price = get_token_price_in_usdc(token_mint)
-if price is not None:
-    # Format with 10 decimal places, forcing a non-scientific display
-    print(f"1 unit of token {token_mint} is worth {price:.10f} USDC")
+# token_mint = "62GzFSrcha2QupnSM7BiEwPz4VM1fEFki2Ah7k6bpump"  
+# price = get_token_price_in_usdc(token_mint)
+# if price is not None:
+#     # Format with 10 decimal places, forcing a non-scientific display
+#     print(f"1 unit of token {token_mint} is worth {price:.10f} USDC")
